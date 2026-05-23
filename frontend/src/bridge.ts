@@ -37,8 +37,19 @@ class SidecarBridge {
 
   async getPort(): Promise<number> {
     if (this.port !== null) return this.port;
-    // @ts-ignore
-    this.port = await window.ipcRenderer.invoke('get-sidecar-port');
+    try {
+      // @ts-ignore
+      if (window.ipcRenderer) {
+        // @ts-ignore
+        this.port = await window.ipcRenderer.invoke('get-sidecar-port');
+      } else {
+        console.warn('ipcRenderer not found, falling back to default port 8000');
+        this.port = 8000;
+      }
+    } catch (e) {
+      console.error('Failed to get port from Electron, falling back to 8000:', e);
+      this.port = 8000;
+    }
     return this.port!;
   }
 
@@ -118,6 +129,11 @@ class SidecarBridge {
   async getThumbnailUrl(filePath: string, timestamp: number): Promise<string> {
     const baseUrl = await this.getBaseUrl();
     return `${baseUrl}/thumbnail?file_path=${encodeURIComponent(filePath)}&t=${timestamp}`;
+  }
+
+  async getVideoUrl(filePath: string): Promise<string> {
+    const baseUrl = await this.getBaseUrl();
+    return `${baseUrl}/video?path=${encodeURIComponent(filePath)}`;
   }
 }
 

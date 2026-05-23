@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -99,6 +99,12 @@ async def get_index_job_status(job_id: str):
 @app.get("/search")
 async def search(query: str, video_path: str = Query(None)):
     return search_service.search(query, video_path)
+
+@app.get("/video")
+async def get_video(path: str):
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path)
 
 @app.get("/thumbnail")
 async def get_thumbnail(file_path: str, t: float):

@@ -38,8 +38,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
   return (
     <div className="w-full flex flex-col items-center gap-12">
-      <div className="relative w-full max-w-4xl group">
-        <div className="relative h-96">
+      <div className="relative w-full max-w-2xl group">
+        <div className="relative h-80">
           {/* CONTENT LAYER */}
           <div 
             className={cn(
@@ -54,11 +54,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
               <div className="flex flex-col items-center gap-2">
                 <h3 className="text-3xl font-bold tracking-tight">
-                  Drop video here
+                  Drag & Drop to Upload
                 </h3>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/30">
-                  DRAG & DROP TO UPLOAD · {VIDEO_CONFIG.hint}
-                </p>
               </div>
             </div>
           </div>
@@ -100,15 +97,23 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
       {/* Import button below and middle */}
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={(e) => {
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={async (e) => {
           e.stopPropagation();
-          open();
+          if (window.ipcRenderer) {
+            // @ts-ignore
+            const path = await window.ipcRenderer.invoke('open-file');
+            if (path) {
+              onFilesSelected([{ path } as any]);
+            }
+          } else {
+            open();
+          }
         }}
-        className="flex items-center gap-4 px-12 py-5 bg-primary text-primary-foreground rounded-full text-lg font-bold shadow-2xl shadow-primary/20 transition-all z-30"
+        className="flex items-center gap-3 px-8 py-3.5 bg-primary text-primary-foreground rounded-full text-base font-bold shadow-2xl shadow-primary/20 transition-all z-30 cursor-pointer"
       >
-        <FolderPlus size={24} strokeWidth={2.5} />
+        <FolderPlus size={20} strokeWidth={2.5} />
         Import
       </motion.button>
     </div>
