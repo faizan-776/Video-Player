@@ -14,7 +14,7 @@ export interface FileData {
 }
 
 export interface ProcessingOptions {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export const SUPPORTED_FORMATS = {

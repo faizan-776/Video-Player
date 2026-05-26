@@ -8,6 +8,7 @@ import os
 import cv2
 import io
 import threading
+from typing import Optional
 from PIL import Image
 from services.whisper_service import whisper_service
 from services.scene_service import scene_service
@@ -48,6 +49,7 @@ app.add_middleware(
 
 class TranscribeRequest(BaseModel):
     file_path: str
+    target_language: str = "en"
 
 class SceneRequest(BaseModel):
     file_path: str
@@ -63,7 +65,7 @@ async def ping():
 async def transcribe(request: TranscribeRequest):
     if not os.path.exists(request.file_path):
         raise HTTPException(status_code=404, detail="File not found")
-    job_id = whisper_service.start_transcription(request.file_path)
+    job_id = whisper_service.start_transcription(request.file_path, request.target_language)
     return {"job_id": job_id}
 
 @app.get("/transcribe/{job_id}")
@@ -97,14 +99,42 @@ async def get_index_job_status(job_id: str):
     return search_service.get_job_status(job_id)
 
 @app.get("/search")
-async def search(query: str, video_path: str = Query(None)):
+async def search(query: str, video_path: Optional[str] = Query(None)):
     return search_service.search(query, video_path)
 
 @app.get("/video")
 async def get_video(path: str):
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path)
+    print(f"\n[DEBUG] === Video Request Start ===")
+    print(f"[DEBUG] Path requested: {path}")
+    
+    # 1. Absolute / Direct check (Most likely to succeed with sandbox:false)
+    if os.path.exists(path):
+        print(f"[OK] Found file!")
+        return FileResponse(path)
+    
+    # 2. Filename-only smart search
+    filename = os.path.basename(path)
+    print(f"[DEBUG] Searching for filename: {filename}")
+    
+    # Check project root and parent
+    search_dirs = [os.getcwd(), os.path.dirname(os.getcwd())]
+    # Check common user libraries
+    search_dirs += [
+        os.path.expanduser("~/Desktop"),
+        os.path.expanduser("~/Downloads"),
+        os.path.expanduser("~/Videos"),
+    ]
+    
+    for sd in search_dirs:
+        if not os.path.exists(sd): continue
+        potential = os.path.join(sd, filename)
+        if os.path.exists(potential):
+            print(f"[OK] Found in: {potential}")
+            return FileResponse(potential)
+
+    print(f"[ERROR] Video file NOT FOUND.")
+    print(f"[DEBUG] === Video Request End ===\n")
+    raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/thumbnail")
 async def get_thumbnail(file_path: str, t: float):

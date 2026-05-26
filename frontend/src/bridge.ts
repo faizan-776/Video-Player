@@ -8,7 +8,7 @@ export interface TranscribeResponse {
 }
 
 export interface TranscriptionJobStatus {
-  status: 'processing' | 'completed' | 'failed' | 'not_found';
+  status: 'processing' | 'translating' | 'completed' | 'failed' | 'not_found';
   progress: number;
   result?: { start: number; end: number; text: string }[];
   error?: string;
@@ -32,16 +32,27 @@ export interface SearchResult {
   score: number;
 }
 
+export interface IndexJobStatus {
+  status: 'processing' | 'completed' | 'failed' | 'not_found';
+  progress: number;
+}
+
 class SidecarBridge {
   private port: number | null = null;
+
+  private get ipc() {
+    return window.ipcRenderer;
+  }
+
+  get isElectron() {
+    return /electron/i.test(navigator.userAgent);
+  }
 
   async getPort(): Promise<number> {
     if (this.port !== null) return this.port;
     try {
-      // @ts-ignore
-      if (window.ipcRenderer) {
-        // @ts-ignore
-        this.port = await window.ipcRenderer.invoke('get-sidecar-port');
+      if (this.ipc) {
+        this.port = await this.ipc.invoke('get-sidecar-port');
       } else {
         console.warn('ipcRenderer not found, falling back to default port 8000');
         this.port = 8000;
@@ -64,12 +75,12 @@ class SidecarBridge {
     return await response.json();
   }
 
-  async transcribe(filePath: string): Promise<TranscribeResponse> {
+  async transcribe(filePath: string, targetLanguage: string = 'en'): Promise<TranscribeResponse> {
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/transcribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file_path: filePath }),
+      body: JSON.stringify({ file_path: filePath, target_language: targetLanguage }),
     });
     return await response.json();
   }
@@ -112,7 +123,7 @@ class SidecarBridge {
     return await response.json();
   }
 
-  async getIndexJobStatus(jobId: string): Promise<{ status: string; progress: number }> {
+  async getIndexJobStatus(jobId: string): Promise<IndexJobStatus> {
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/index-video/${jobId}`);
     return await response.json();
@@ -134,6 +145,22 @@ class SidecarBridge {
   async getVideoUrl(filePath: string): Promise<string> {
     const baseUrl = await this.getBaseUrl();
     return `${baseUrl}/video?path=${encodeURIComponent(filePath)}`;
+  }
+
+  async openFile(): Promise<string | null> {
+    console.log('[Bridge] openFile called. ipc exists:', !!this.ipc);
+    try {
+      if (this.ipc) {
+        const result = await this.ipc.invoke('open-file');
+        console.log('[Bridge] open-file result:', result);
+        return result;
+      } else {
+        console.error('[Bridge] ipcRenderer not found in window');
+      }
+    } catch (e) {
+      console.error('[Bridge] Failed to open file via IPC:', e);
+    }
+    return null;
   }
 }
 

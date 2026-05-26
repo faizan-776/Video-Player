@@ -1,22 +1,25 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, Menu, MenuItemConstructorOptions } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'path'
 import { startSidecar, stopSidecar, getSidecarPort } from './sidecar'
 
-// Disable hardware acceleration to prevent system crashes on some machines
+// Disable hardware acceleration to prevent potential rendering issues
 app.disableHardwareAcceleration()
-
-// Explicitly tell Chromium to ignore GPU features to silence error logs on integrated graphics
-app.commandLine.appendSwitch('disable-gpu')
-app.commandLine.appendSwitch('disable-gpu-compositing')
-app.commandLine.appendSwitch('disable-gpu-rasterization')
-app.commandLine.appendSwitch('disable-gpu-sandbox')
-app.commandLine.appendSwitch('in-process-gpu')
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// The built directory structure
+//
+// ├─┬─┬ dist
+// │ │ └── index.html
+// │ │
+// │ ├─┬ dist-electron
+// │ │ ├── main.js
+// │ │ └── preload.mjs
+// │
 process.env.APP_ROOT = path.join(__dirname, '..')
 
+// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
@@ -25,37 +28,55 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 
 let win: BrowserWindow | null
 
-// Open DevTools in dev mode
-const isDev = !!process.env.VITE_DEV_SERVER_URL
-
-// Expose sidecar port to renderer
-ipcMain.handle('get-sidecar-port', () => getSidecarPort())
-
-// Open file dialog
-ipcMain.handle('open-file', async () => {
-  const { canceled, filePaths } = await dialog.showOpenDialog({
-    properties: ['openFile'],
-    filters: [
-      { name: 'Videos', extensions: ['mp4', 'mkv', 'avi', 'webm'] }
-    ]
+function createWindow() {
+  const preloadPath = path.join(__dirname, 'preload.js')
+  console.log('[Main] Preload path:', preloadPath)
+  
+  win = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    webPreferences: {
+      preload: preloadPath,
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+    title: 'Video Player 2.0',
+    backgroundColor: '#000000',
+    minWidth: 1000,
+    minHeight: 600,
   })
-  if (canceled) return null
-  return filePaths[0]
-})
+
+  // Test actively push message to the Electron-Renderer
+  win.webContents.on('did-finish-load', () => {
+    win?.webContents.send('main-process-message', (new Date).toLocaleString())
+  })
+
+  if (VITE_DEV_SERVER_URL) {
+    win.loadURL(VITE_DEV_SERVER_URL)
+  } else {
+    // win.loadFile('dist/index.html')
+    win.loadFile(path.join(RENDERER_DIST, 'index.html'))
+  }
+
+  createMenu()
+}
 
 function createMenu() {
-  const template: any[] = [
+  const template: MenuItemConstructorOptions[] = [
     {
       label: 'File',
       submenu: [
         {
-          label: 'Import',
-          accelerator: 'CmdOrCtrl+I',
-          click: () => {
-            win?.webContents.send('trigger-import')
-          }
+          label: 'Home',
+          accelerator: 'CmdOrCtrl+H',
+          click: () => win?.webContents.send('go-home')
+        },
+        {
+          label: 'Open Video',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => win?.webContents.send('trigger-import')
         },
         { type: 'separator' },
+        { role: 'quit' }
       ]
     },
     {
@@ -72,23 +93,38 @@ function createMenu() {
     {
       label: 'View',
       submenu: [
+        { role: 'togglefullscreen' },
+        { type: 'separator' },
         { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' }
+        { role: 'toggleDevTools' }
       ]
     },
     {
-      label: 'Window',
+      label: 'Theme',
       submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
-        { role: 'close' }
+        {
+          label: 'Modes',
+          submenu: [
+            {
+              label: 'Light Mode',
+              click: () => win?.webContents.send('set-theme', 'light')
+            },
+            {
+              label: 'Dark Mode',
+              click: () => win?.webContents.send('set-theme', 'dark')
+            }
+          ]
+        },
+        {
+          label: 'Palettes',
+          submenu: [
+            { label: 'Default', click: () => win?.webContents.send('set-palette', '') },
+            { label: 'Sunset', click: () => win?.webContents.send('set-palette', 'sunset') },
+            { label: 'Forest', click: () => win?.webContents.send('set-palette', 'forest') },
+            { label: 'Ocean', click: () => win?.webContents.send('set-palette', 'ocean') },
+            { label: 'Nebula', click: () => win?.webContents.send('set-palette', 'nebula') }
+          ]
+        }
       ]
     }
   ]
@@ -97,37 +133,28 @@ function createMenu() {
   Menu.setApplicationMenu(menu)
 }
 
-function createWindow() {
-  win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    title: 'Video-Zone',
-    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
-      webSecurity: false, // Allow loading local video files
-    },
+// IPC Handlers
+ipcMain.handle('open-file', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [
+      { name: 'Videos', extensions: ['mp4', 'mkv', 'avi', 'mov', 'webm'] }
+    ]
   })
-
-  if (isDev) {
-    win.webContents.openDevTools()
+  if (!canceled) {
+    return filePaths[0]
   }
+  return null
+})
 
-  win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', (new Date).toLocaleString())
-  })
+ipcMain.handle('get-sidecar-port', async () => {
+  return await getSidecarPort();
+})
 
-  if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL)
-  } else {
-    win.loadFile(path.join(RENDERER_DIST, 'index.html'))
-  }
-
-  createMenu()
-}
-
+// Quit when all windows are closed, except on macOS. There, it's common
+// for applications and their menu bar to stay active until the user quits
+// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  stopSidecar()
   if (process.platform !== 'darwin') {
     app.quit()
     win = null
@@ -138,6 +165,10 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
   }
+})
+
+app.on('will-quit', async () => {
+  await stopSidecar()
 })
 
 app.whenReady().then(async () => {
