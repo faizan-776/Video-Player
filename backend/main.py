@@ -104,21 +104,16 @@ async def search(query: str, video_path: Optional[str] = Query(None)):
 
 @app.get("/video")
 async def get_video(path: str):
-    print(f"\n[DEBUG] === Video Request Start ===")
-    print(f"[DEBUG] Path requested: {path}")
-    
-    # 1. Absolute / Direct check (Most likely to succeed with sandbox:false)
+    # SILENT SEARCH: Avoid printing logs for every 206 Partial Content request
     if os.path.exists(path):
-        print(f"[OK] Found file!")
         return FileResponse(path)
     
-    # 2. Filename-only smart search
+    # Only log if we need to fall back to smart search
     filename = os.path.basename(path)
-    print(f"[DEBUG] Searching for filename: {filename}")
+    print(f"[INFO] Video not found at direct path, performing smart search for: {filename}")
     
     # Check project root and parent
     search_dirs = [os.getcwd(), os.path.dirname(os.getcwd())]
-    # Check common user libraries
     search_dirs += [
         os.path.expanduser("~/Desktop"),
         os.path.expanduser("~/Downloads"),
@@ -129,11 +124,8 @@ async def get_video(path: str):
         if not os.path.exists(sd): continue
         potential = os.path.join(sd, filename)
         if os.path.exists(potential):
-            print(f"[OK] Found in: {potential}")
             return FileResponse(potential)
 
-    print(f"[ERROR] Video file NOT FOUND.")
-    print(f"[DEBUG] === Video Request End ===\n")
     raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/thumbnail")

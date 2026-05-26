@@ -4,6 +4,8 @@ import uuid
 import os
 import lancedb
 import gc
+import numpy as np
+from typing import List, Dict
 
 class SceneService:
     def __init__(self, db_path="vector_db"):
@@ -11,6 +13,7 @@ class SceneService:
         self.jobs = {}
         self.db = lancedb.connect(self.db_path)
         self.table_name = "scenes"
+        self.search_table = "video_frames_v5"
 
     def _normalize_path(self, path: str) -> str:
         return path.replace("\\", "/").lower()
@@ -28,6 +31,8 @@ class SceneService:
     def _run_detection(self, job_id, file_path):
         try:
             norm_path = self._normalize_path(file_path)
+            self.jobs[job_id]["progress"] = 5
+            self.jobs[job_id]["progress_label"] = "Starting..."
             
             # CLEAN START: Purge old data
             if self.table_name in self.db.table_names():
@@ -35,28 +40,40 @@ class SceneService:
                 escaped_path = self._escape_path(norm_path)
                 table.delete(f"video_path = '{escaped_path}'")
 
+            # Phase 1: Standard Pixel Detection (Fast)
             video = open_video(file_path)
             scene_manager = SceneManager()
             scene_manager.add_detector(ContentDetector())
             
+            self.jobs[job_id]["progress"] = 15
+            self.jobs[job_id]["progress_label"] = "Processing..."
+            
             scene_manager.detect_scenes(video)
             scene_list = scene_manager.get_scene_list()
+            
+            # Phase 2: Semantic Drift (Task 2.1)
+            # Use visual vectors to find "Story Beats"
+            semantic_scenes = self._detect_semantic_drift(norm_path)
             
             results = []
             data = []
             
-            for i, scene in enumerate(scene_list):
-                start = scene[0].get_seconds()
-                end = scene[1].get_seconds()
+            self.jobs[job_id]["progress"] = 90
+            self.jobs[job_id]["progress_label"] = "Almost there..."
+
+            # Merge standard and semantic results
+            final_scenes = self._merge_scene_logic(scene_list, semantic_scenes)
+
+            for i, scene in enumerate(final_scenes):
                 results.append({
                     "number": i + 1,
-                    "start": start,
-                    "end": end
+                    "start": scene["start"],
+                    "end": scene["end"]
                 })
                 data.append({
                     "video_path": norm_path,
-                    "start_time": start,
-                    "end_time": end,
+                    "start_time": scene["start"],
+                    "end_time": scene["end"],
                     "scene_number": i + 1
                 })
             
@@ -68,6 +85,7 @@ class SceneService:
 
             self.jobs[job_id]["status"] = "completed"
             self.jobs[job_id]["progress"] = 100
+            self.jobs[job_id]["progress_label"] = "Finished"
             self.jobs[job_id]["result"] = results
             gc.collect()
             
@@ -76,6 +94,63 @@ class SceneService:
             self.jobs[job_id]["status"] = "failed"
             self.jobs[job_id]["error"] = str(e)
             gc.collect()
+
+    def _detect_semantic_drift(self, norm_path: str) -> List[Dict]:
+        """Task 2.1: Use visual vectors to detect content-aware scene changes."""
+        try:
+            if self.search_table not in self.db.table_names():
+                return []
+            
+            table = self.db.open_table(self.search_table)
+            escaped_path = self._escape_path(norm_path)
+            rows = table.search().where(f"video_path = '{escaped_path}'").to_list()
+            rows.sort(key=lambda x: x["timestamp"])
+            
+            if len(rows) < 2: return []
+            
+            semantic_cuts = []
+            for i in range(1, len(rows)):
+                v1 = np.array(rows[i-1]["vector"])
+                v2 = np.array(rows[i]["vector"])
+                
+                # Cosine Similarity
+                sim = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+                
+                # If "vibe" changes by > 30%, mark a potential story beat
+                if sim < 0.7:
+                    semantic_cuts.append(rows[i]["timestamp"])
+            
+            return [{"start": t} for t in semantic_cuts]
+        except Exception as e:
+            print(f"[DEBUG] Semantic drift failed: {e}")
+            return []
+
+    def _merge_scene_logic(self, pixel_scenes, semantic_scenes):
+        """Intelligently merge pixel cuts and semantic story beats."""
+        merged = []
+        # Convert pixel scenes to basic format
+        for s in pixel_scenes:
+            merged.append({"start": s[0].get_seconds(), "end": s[1].get_seconds()})
+        
+        # Add semantic beats if they are not too close to existing cuts
+        for ss in semantic_scenes:
+            is_duplicate = any(abs(ss["start"] - m["start"]) < 5.0 for m in merged)
+            if not is_duplicate:
+                # Find where to insert and split existing scene
+                merged.append({"start": ss["start"], "end": -1}) 
+        
+        merged.sort(key=lambda x: x["start"])
+        
+        # Repair 'end' times
+        for i in range(len(merged) - 1):
+            if merged[i]["end"] == -1:
+                merged[i]["end"] = merged[i+1]["start"]
+        
+        # Ensure final scene has an end (simplified)
+        if merged and merged[-1]["end"] == -1:
+            merged[-1]["end"] = merged[-1]["start"] + 10.0
+            
+        return [m for m in merged if m["end"] != -1]
 
     def get_job_status(self, job_id):
         return self.jobs.get(job_id, {"status": "not_found"})

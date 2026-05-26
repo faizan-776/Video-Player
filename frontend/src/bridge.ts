@@ -10,6 +10,7 @@ export interface TranscribeResponse {
 export interface TranscriptionJobStatus {
   status: 'processing' | 'translating' | 'completed' | 'failed' | 'not_found';
   progress: number;
+  progress_label?: string;
   result?: { start: number; end: number; text: string }[];
   error?: string;
 }
@@ -23,6 +24,7 @@ export interface Scene {
 export interface SceneJobStatus {
   status: 'processing' | 'completed' | 'failed' | 'not_found';
   progress: number;
+  progress_label?: string;
   result?: Scene[];
   error?: string;
 }
@@ -35,6 +37,7 @@ export interface SearchResult {
 export interface IndexJobStatus {
   status: 'processing' | 'completed' | 'failed' | 'not_found';
   progress: number;
+  progress_label?: string;
 }
 
 class SidecarBridge {
@@ -65,6 +68,9 @@ class SidecarBridge {
   }
 
   async getBaseUrl(): Promise<string> {
+    const overrideUrl = localStorage.getItem('BACKEND_URL');
+    if (overrideUrl) return overrideUrl;
+    
     const port = await this.getPort();
     return `http://127.0.0.1:${port}`;
   }

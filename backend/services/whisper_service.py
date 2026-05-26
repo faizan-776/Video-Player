@@ -7,6 +7,9 @@ import argostranslate.package
 import argostranslate.translate
 from faster_whisper import WhisperModel
 
+from services.search_service import search_service
+from services.utils import anime_translation_fixer
+
 class WhisperService:
     def __init__(self):
         # PERMANENT OPTIMIZED CONFIG: The sweet spot for i5/8GB hardware
@@ -56,6 +59,7 @@ class WhisperService:
             # Phase 1: Model Loading (0-15%)
             self.jobs[job_id]["status"] = "initializing_ai"
             self.jobs[job_id]["progress"] = 5
+            self.jobs[job_id]["progress_label"] = "Starting..."
             
             model = self._get_model()
             self.jobs[job_id]["progress"] = 15
@@ -64,6 +68,7 @@ class WhisperService:
             print(f"[PROCESS] Starting task: {task} (Model: {self.model_size})")
             
             self.jobs[job_id]["status"] = "processing"
+            self.jobs[job_id]["progress_label"] = "Processing..."
             
             # Transcription with anime context prompt
             # Set patience higher for accuracy
@@ -78,28 +83,39 @@ class WhisperService:
 
             results = []
             for segment in segments:
+                # Task 3.2: Clean and refine text
+                text = anime_translation_fixer(segment.text.strip())
+                
                 results.append({
                     "start": round(segment.start, 3),
                     "end": round(segment.end, 3),
-                    "text": segment.text.strip()
+                    "text": text
                 })
+                
+                # Task 1.2: Inject into search index
+                search_service.inject_transcript(file_path, segment.start, text)
+
                 if info.duration > 0:
                     # Update progress dynamically between 15% and 90%
                     actual_progress = 15 + int((segment.end / info.duration) * 75)
                     self.jobs[job_id]["progress"] = min(90, actual_progress)
-                print(f"[AI-WORK] {round(segment.start, 1)}s: {segment.text[:30]}...")
+                print(f"[AI-WORK] {round(segment.start, 1)}s: {text[:30]}...")
 
             # Phase 2: Translation (90-100%)
             if target_language != "en" and info.language != target_language:
                 self.jobs[job_id]["status"] = "translating"
+                self.jobs[job_id]["progress_label"] = "Almost there..."
                 if self._init_translation(info.language, target_language):
                     total_res = len(results)
                     for i, res in enumerate(results):
-                        results[i]["text"] = argostranslate.translate.translate(res["text"], info.language, target_language)
+                        # Task 3.2: Fix translation quirks
+                        raw_trans = argostranslate.translate.translate(res["text"], info.language, target_language)
+                        results[i]["text"] = anime_translation_fixer(raw_trans)
                         self.jobs[job_id]["progress"] = 90 + int(((i + 1) / total_res) * 10)
 
             self.jobs[job_id]["status"] = "completed"
             self.jobs[job_id]["progress"] = 100
+            self.jobs[job_id]["progress_label"] = "Finished"
             self.jobs[job_id]["result"] = results
             print(f"[SUCCESS] Job {job_id} completed.")
             gc.collect()

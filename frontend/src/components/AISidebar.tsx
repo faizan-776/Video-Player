@@ -20,6 +20,7 @@ export interface AIJob {
   status: 'processing' | 'completed' | 'failed' | 'initializing_ai' | 'translating';
   progress: number;
   label: string;
+  progress_label?: string; // New semantic status text
 }
 
 interface AISidebarProps {
@@ -99,7 +100,8 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             onJobUpdate({
               ...job,
               status: (status.status === 'not_found' ? 'failed' : status.status) as AIJob['status'],
-              progress: status.progress || (status.status === 'completed' ? 100 : job.progress)
+              progress: status.progress || (status.status === 'completed' ? 100 : job.progress),
+              progress_label: status.progress_label // Pass through the semantic label
             });
           }
         } catch (e) {
@@ -173,9 +175,11 @@ export const AISidebar: React.FC<AISidebarProps> = ({
                     <Progress value={job.progress} className="h-1" />
                     <div className="flex justify-between text-[11px] font-mono text-white/30">
                       <span className="capitalize">
-                        {job.status === 'initializing_ai' ? 'Initializing...' : 
-                         job.status === 'translating' ? 'Translating...' : 
-                         job.status}
+                        {job.progress_label || (
+                          job.status === 'initializing_ai' ? 'Initializing...' : 
+                          job.status === 'translating' ? 'Translating...' : 
+                          job.status
+                        )}
                       </span>
                       <span>{Math.round(job.progress)}%</span>
                     </div>

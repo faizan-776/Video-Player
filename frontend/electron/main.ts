@@ -38,6 +38,8 @@ function createWindow() {
       preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: false,
+      allowRunningInsecureContent: true,
     },
     title: 'Video Player 2.0',
     backgroundColor: '#000000',
