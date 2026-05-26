@@ -88,10 +88,9 @@ function App() {
               console.log('[App] bridge.openFile path:', path);
               if (path) {
                 setVideoPath(path)
-              } else if (!bridge.isElectron) {
-                console.warn('[App] Not in Electron, showing alert');
-                alert('IPC not available. Run in Electron.')
               } else {
+                // TEMPORARY: Browser support allows this to be reached without alert
+                // REVERT: Consider restoring the Electron-only alert if strict environment enforcement is desired
                 console.log('[App] No path returned (cancelled or error)');
               }
             }}

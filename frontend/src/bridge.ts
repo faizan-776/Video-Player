@@ -149,6 +149,10 @@ class SidecarBridge {
   }
 
   async getVideoUrl(filePath: string): Promise<string> {
+    // TEMPORARY: Browser support for Blob URLs (for Vercel deployment)
+    // REVERT: Remove this line when back in Electron to ensure local paths are served correctly via backend
+    if (filePath.startsWith('blob:')) return filePath;
+    
     const baseUrl = await this.getBaseUrl();
     return `${baseUrl}/video?path=${encodeURIComponent(filePath)}`;
   }
@@ -161,10 +165,28 @@ class SidecarBridge {
         console.log('[Bridge] open-file result:', result);
         return result;
       } else {
-        console.error('[Bridge] ipcRenderer not found in window');
+        // TEMPORARY: Browser fallback for file selection (for Vercel deployment)
+        // REVERT: Remove this else block and keep only the IPC invocation
+        console.log('[Bridge] ipcRenderer not found, using browser file picker');
+        return new Promise((resolve) => {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'video/*';
+          input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+              const url = URL.createObjectURL(file);
+              console.log('[Bridge] Browser file selected, created blob URL:', url);
+              resolve(url);
+            } else {
+              resolve(null);
+            }
+          };
+          input.click();
+        });
       }
     } catch (e) {
-      console.error('[Bridge] Failed to open file via IPC:', e);
+      console.error('[Bridge] Failed to open file:', e);
     }
     return null;
   }
