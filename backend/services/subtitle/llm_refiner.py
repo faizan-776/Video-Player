@@ -24,17 +24,23 @@ class LLMRefiner:
         if self.model is not None or hasattr(self, 'refiner'): return
         
         try:
-            # UPGRADE: Using flan-t5-base (250M params) for significantly better reasoning
-            # than 'small' while still fitting in 8GB RAM.
-            model_id = "google/flan-t5-base"
-            print(f"[INFO] Loading Stronger Subtitle Refiner ({model_id})...")
+            # UPGRADE: Testing flan-t5-large (780M params) for peak localization quality.
+            # This is the largest model that can reliably run on 8GB RAM alongside Whisper.
+            model_id = "google/flan-t5-large"
+            print(f"[INFO] Loading High-Capacity Subtitle Refiner ({model_id})...")
             from transformers import pipeline
             self.refiner = pipeline("text2text-generation", model=model_id, device="cpu")
             self.model = model_id
-            print("[SUCCESS] Stronger Subtitle Refiner is ready.")
+            print("[SUCCESS] High-Capacity Subtitle Refiner is ready.")
         except Exception as e:
-            print(f"[WARN] Could not load LLM Refiner: {e}. Falling back to rule-based refinement.")
-            self.refiner = None
+            print(f"[WARN] Could not load High-Capacity Refiner: {e}. Falling back to base model.")
+            # Fallback chain: large -> base -> small -> rule-based
+            try:
+                model_id = "google/flan-t5-base"
+                self.refiner = pipeline("text2text-generation", model=model_id, device="cpu")
+                self.model = model_id
+            except:
+                self.refiner = None
 
     def refine(self, text: str, context: Any, style: str = "dramatic") -> str:
         self._lazy_load()

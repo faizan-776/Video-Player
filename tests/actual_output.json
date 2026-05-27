@@ -93,7 +93,7 @@
       {
         "start": 35.65,
         "end": 38.15,
-        "text": "Its a good night."
+        "text": "What a wonderful night..."
       },
       {
         "start": 46.87,
@@ -103,7 +103,7 @@
       {
         "start": 50.87,
         "end": 71.91,
-        "text": "Now, shall we begin?"
+        "text": "Now... let us begin!"
       },
       {
         "start": 72.41,
@@ -111,6 +111,6 @@
         "text": "Prepare yourself!"
       }
     ],
-    "dramatic_markers_count": 1
+    "dramatic_markers_count": 3
   }
 }

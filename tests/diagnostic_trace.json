@@ -35,7 +35,7 @@
     "input": {
       "original": "The word, the final battle, comes to mind over and over again.",
       "visuals": "shouting, talking, emotional",
-      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: shouting, talking, emotional\nOriginal: The word, the final battle, comes to mind over and over again.\nLocalized Dramatic Version:"
+      "prompt": "Instructions: You are an expert Anime Localizer. Rewrite this line to be much more poetic, intense, and dramatic. Use high-level vocabulary (e.g., 'wonderful', 'magnificent', 'eternal').\nScene: shouting, talking, emotional\nOriginal: The word, the final battle, comes to mind over and over again.\nAnime Style Rewrite:"
     },
     "output": "The word, the final battle, comes to mind over and over again.",
     "metadata": {
@@ -78,7 +78,7 @@
     "input": {
       "original": "This long battle may end tonight.",
       "visuals": "talking, shouting, combat",
-      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: talking, shouting, combat\nOriginal: This long battle may end tonight.\nLocalized Dramatic Version:"
+      "prompt": "Instructions: You are an expert Anime Localizer. Rewrite this line to be much more poetic, intense, and dramatic. Use high-level vocabulary (e.g., 'wonderful', 'magnificent', 'eternal').\nScene: talking, shouting, combat\nOriginal: This long battle may end tonight.\nAnime Style Rewrite:"
     },
     "output": "This long battle may end tonight.",
     "metadata": {
@@ -121,11 +121,11 @@
     "input": {
       "original": "It's a good night.",
       "visuals": "shouting, talking, emotional",
-      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: shouting, talking, emotional\nOriginal: It's a good night.\nLocalized Dramatic Version:"
+      "prompt": "Instructions: You are an expert Anime Localizer. Rewrite this line to be much more poetic, intense, and dramatic. Use high-level vocabulary (e.g., 'wonderful', 'magnificent', 'eternal').\nScene: shouting, talking, emotional\nOriginal: It's a good night.\nAnime Style Rewrite:"
     },
-    "output": "Its a good night.",
+    "output": "What a wonderful night...",
     "metadata": {
-      "similarity": 0.9842268824577332
+      "similarity": 0.953997790813446
     }
   },
   {
@@ -164,7 +164,7 @@
     "input": {
       "original": "It's been a long time, Zenitsu.",
       "visuals": "combat, emotional, shouting",
-      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: combat, emotional, shouting\nOriginal: It's been a long time, Zenitsu.\nLocalized Dramatic Version:"
+      "prompt": "Instructions: You are an expert Anime Localizer. Rewrite this line to be much more poetic, intense, and dramatic. Use high-level vocabulary (e.g., 'wonderful', 'magnificent', 'eternal').\nScene: combat, emotional, shouting\nOriginal: It's been a long time, Zenitsu.\nAnime Style Rewrite:"
     },
     "output": "Its been a long time, Zenitsu.",
     "metadata": {
@@ -207,11 +207,11 @@
     "input": {
       "original": "Now, shall we begin?",
       "visuals": "shouting, emotional, talking",
-      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: shouting, emotional, talking\nOriginal: Now, shall we begin?\nLocalized Dramatic Version:"
+      "prompt": "Instructions: You are an expert Anime Localizer. Rewrite this line to be much more poetic, intense, and dramatic. Use high-level vocabulary (e.g., 'wonderful', 'magnificent', 'eternal').\nScene: shouting, emotional, talking\nOriginal: Now, shall we begin?\nAnime Style Rewrite:"
     },
-    "output": "Now, shall we begin?",
+    "output": "Now... let us begin!",
     "metadata": {
-      "similarity": 1.000000238418579
+      "similarity": 0.981755256652832
     }
   },
   {
