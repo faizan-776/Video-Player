@@ -35,7 +35,7 @@
     "input": {
       "original": "The word, the final battle, comes to mind over and over again.",
       "visuals": "shouting, talking, emotional",
-      "prompt": "Instructions: Rewrite this anime subtitle to be more poetic and dramatic.\nScene: shouting, talking, emotional\nOriginal: The word, the final battle, comes to mind over and over again.\nDramatic Subtitle:"
+      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: shouting, talking, emotional\nOriginal: The word, the final battle, comes to mind over and over again.\nLocalized Dramatic Version:"
     },
     "output": "The word, the final battle, comes to mind over and over again.",
     "metadata": {
@@ -70,6 +70,19 @@
         "talking": 0.25559765641796994,
         "shouting": 0.2469325035249182
       }
+    }
+  },
+  {
+    "component": "BrainAI (LLM)",
+    "timestamp": 0,
+    "input": {
+      "original": "This long battle may end tonight.",
+      "visuals": "talking, shouting, combat",
+      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: talking, shouting, combat\nOriginal: This long battle may end tonight.\nLocalized Dramatic Version:"
+    },
+    "output": "This long battle may end tonight.",
+    "metadata": {
+      "similarity": 1.0
     }
   },
   {
@@ -108,7 +121,7 @@
     "input": {
       "original": "It's a good night.",
       "visuals": "shouting, talking, emotional",
-      "prompt": "Instructions: Rewrite this anime subtitle to be more poetic and dramatic.\nScene: shouting, talking, emotional\nOriginal: It's a good night.\nDramatic Subtitle:"
+      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: shouting, talking, emotional\nOriginal: It's a good night.\nLocalized Dramatic Version:"
     },
     "output": "Its a good night.",
     "metadata": {
@@ -151,7 +164,7 @@
     "input": {
       "original": "It's been a long time, Zenitsu.",
       "visuals": "combat, emotional, shouting",
-      "prompt": "Instructions: Rewrite this anime subtitle to be more poetic and dramatic.\nScene: combat, emotional, shouting\nOriginal: It's been a long time, Zenitsu.\nDramatic Subtitle:"
+      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: combat, emotional, shouting\nOriginal: It's been a long time, Zenitsu.\nLocalized Dramatic Version:"
     },
     "output": "Its been a long time, Zenitsu.",
     "metadata": {
@@ -186,6 +199,19 @@
         "talking": 0.24624174840891624,
         "shouting": 0.25544362145003663
       }
+    }
+  },
+  {
+    "component": "BrainAI (LLM)",
+    "timestamp": 0,
+    "input": {
+      "original": "Now, shall we begin?",
+      "visuals": "shouting, emotional, talking",
+      "prompt": "Instructions: Rewrite this anime subtitle. Use poetic and intense vocabulary. Feel free to change words to sound more dramatic.\nScene: shouting, emotional, talking\nOriginal: Now, shall we begin?\nLocalized Dramatic Version:"
+    },
+    "output": "Now, shall we begin?",
+    "metadata": {
+      "similarity": 1.000000238418579
     }
   },
   {

@@ -88,7 +88,7 @@
       {
         "start": 16.49,
         "end": 20.49,
-        "text": "THIS LONG BATTLE MAY END TONIGHT.!"
+        "text": "This long battle may end tonight."
       },
       {
         "start": 35.65,
@@ -103,7 +103,7 @@
       {
         "start": 50.87,
         "end": 71.91,
-        "text": "NOW, SHALL WE BEGIN?!"
+        "text": "Now, shall we begin?"
       },
       {
         "start": 72.41,
@@ -111,6 +111,6 @@
         "text": "Prepare yourself!"
       }
     ],
-    "dramatic_markers_count": 3
+    "dramatic_markers_count": 1
   }
 }
