@@ -42,12 +42,41 @@ export const AISidebar: React.FC<AISidebarProps> = ({
   onJobUpdate,
   onSeek
 }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('progress');
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    return (localStorage.getItem('sidebar-active-tab') as Tab) || 'progress'
+  });
   const [transcript, setTranscript] = useState<{ start: number; end: number; text: string }[]>([]);
+  
+  useEffect(() => {
+    localStorage.setItem('sidebar-active-tab', activeTab);
+  }, [activeTab]);
+
   const [scenes, setScenes] = useState<{ number: number; start: number; end: number }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ timestamp: number; score: number }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const clearedJobsRef = React.useRef<Set<string>>(new Set());
+
+  // CLEAN START: Clear results when video changes or new job starts
+  useEffect(() => {
+    setTranscript([]);
+    setScenes([]);
+    setSearchResults([]);
+    setSearchQuery('');
+    clearedJobsRef.current.clear();
+  }, [videoPath]);
+
+  useEffect(() => {
+    activeJobs.forEach(job => {
+      // Only clear once per job when it first enters a starting state
+      if ((job.status === 'processing' || job.status === 'initializing_ai') && !clearedJobsRef.current.has(job.id)) {
+        if (job.type === 'transcribe') setTranscript([]);
+        if (job.type === 'scenes') setScenes([]);
+        if (job.type === 'index') setSearchResults([]);
+        clearedJobsRef.current.add(job.id);
+      }
+    });
+  }, [activeJobs]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

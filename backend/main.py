@@ -1,20 +1,78 @@
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import Response, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import uvicorn
 import sys
 import os
 import cv2
 import io
 import threading
+import logging
+import urllib.parse
+import time
 from typing import Optional
 from PIL import Image
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import Response, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from services.whisper_service import whisper_service
 from services.scene_service import scene_service
 from services.search_service import search_service
 
+# --- Setup Clean Logging ---
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger("uvicorn.access")
+logger.disabled = True  # Disable standard noisy access logs
+
 app = FastAPI()
+
+# Simple cache to prevent spamming 206 Partial Content logs for the same file
+last_logged_request = {}
+
+@app.middleware("http")
+async def custom_logging_middleware(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = (time.time() - start_time) * 1000
+    
+    # Decode and format the path/query for readability
+    url_path = request.url.path
+    query_params = urllib.parse.unquote(str(request.query_params))
+    
+    # Identify the "proper location" or action
+    log_type = "API"
+    details = query_params
+    
+    if url_path == "/video":
+        log_type = "VIDEO"
+        path_param = request.query_params.get("path", "")
+        details = f"Streaming: {urllib.parse.unquote(path_param)}"
+    elif url_path == "/thumbnail":
+        log_type = "THUMB"
+        path_param = request.query_params.get("file_path", "")
+        details = f"Frame at {request.query_params.get('t', '0')}s from {urllib.parse.unquote(path_param)}"
+    elif url_path in ["/transcribe", "/detect-scenes", "/index-video"]:
+        log_type = "AI"
+        details = f"Starting {url_path[1:]} task"
+    elif url_path == "/search":
+        log_type = "SEARCH"
+        details = f"Query: '{request.query_params.get('query', '')}'"
+    
+    # Formatting
+    status_code = response.status_code
+    status_text = "OK" if status_code == 200 else "PARTIAL" if status_code == 206 else f"ERR:{status_code}"
+    
+    # Suppression logic for 206 logs (only log every 5s for the same file)
+    cache_key = f"{url_path}:{details}"
+    now = time.time()
+    if status_code == 206:
+        if cache_key in last_logged_request and now - last_logged_request[cache_key] < 5:
+            return response
+    
+    last_logged_request[cache_key] = now
+    
+    # Final log output
+    print(f"[{log_type}] {status_text} | {details} ({duration:.1f}ms)")
+    
+    return response
 
 # Cache for VideoCapture objects to avoid reopening files repeatedly
 cap_cache = {}
@@ -173,4 +231,4 @@ if __name__ == "__main__":
             port = int(sys.argv[1])
         except ValueError:
             pass
-    uvicorn.run(app, host="127.0.0.1", port=port)
+    uvicorn.run(app, host="127.0.0.1", port=port, access_log=False)

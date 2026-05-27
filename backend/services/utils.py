@@ -1,4 +1,35 @@
 import re
+import json
+import threading
+from typing import Dict, Any, List
+
+class DiagnosticLogger:
+    """Trace AI component inputs/outputs for debugging 'White Box' failures."""
+    def __init__(self):
+        self.trace: List[Dict[str, Any]] = []
+        self._lock = threading.Lock()
+
+    def log(self, component: str, timestamp: float, input_data: Any, output_data: Any, metadata: Dict = None):
+        with self._lock:
+            self.trace.append({
+                "component": component,
+                "timestamp": timestamp,
+                "input": input_data,
+                "output": output_data,
+                "metadata": metadata or {}
+            })
+
+    def save(self, file_path: str):
+        with self._lock:
+            with open(file_path, "w") as f:
+                json.dump(self.trace, f, indent=2)
+            print(f"[DIAGNOSTIC] Trace saved to {file_path}")
+
+    def clear(self):
+        with self._lock:
+            self.trace = []
+
+diagnostic_logger = DiagnosticLogger()
 
 def anime_translation_fixer(text: str) -> str:
     """Task 3.2: Clean up common Argos Translate quirks and anime-specific terminology."""

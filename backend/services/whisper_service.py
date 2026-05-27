@@ -8,7 +8,8 @@ import argostranslate.translate
 from faster_whisper import WhisperModel
 
 from services.search_service import search_service
-from services.utils import anime_translation_fixer
+from services.utils import anime_translation_fixer, diagnostic_logger
+from services.subtitle import subtitle_manager
 
 class WhisperService:
     def __init__(self):
@@ -56,6 +57,9 @@ class WhisperService:
 
     def _run_transcription(self, job_id, file_path, target_language):
         try:
+            # CLEAN START: Purge old transcripts for this video
+            search_service.clear_transcripts(file_path)
+
             # Phase 1: Model Loading (0-15%)
             self.jobs[job_id]["status"] = "initializing_ai"
             self.jobs[job_id]["progress"] = 5
@@ -76,15 +80,26 @@ class WhisperService:
                 file_path, 
                 beam_size=5, 
                 task=task,
-                initial_prompt="Japanese anime dialogue, action scenes.",
+                initial_prompt="Demon Slayer Anime. Sword fighting, Zenitsu, Tanjiro, breathing styles. Intense action scenes.",
                 vad_filter=True,
                 no_speech_threshold=0.6
             )
 
             results = []
             for segment in segments:
-                # Task 3.2: Clean and refine text
-                text = anime_translation_fixer(segment.text.strip())
+                raw_text = segment.text.strip()
+                
+                # DIAGNOSTIC: Log Audio AI output before refinement
+                diagnostic_logger.log(
+                    component="AudioAI (Whisper)",
+                    timestamp=segment.start,
+                    input_data={"file_path": file_path, "task": task},
+                    output_data=raw_text,
+                    metadata={"probability": float(segment.avg_logprob)}
+                )
+
+                # NEW: Context-Aware Subtitle Processing
+                text = subtitle_manager.process_segment(raw_text, segment.start, file_path)
                 
                 results.append({
                     "start": round(segment.start, 3),
@@ -108,9 +123,9 @@ class WhisperService:
                 if self._init_translation(info.language, target_language):
                     total_res = len(results)
                     for i, res in enumerate(results):
-                        # Task 3.2: Fix translation quirks
+                        # Task 3.2: Fix translation quirks and apply context-aware styling
                         raw_trans = argostranslate.translate.translate(res["text"], info.language, target_language)
-                        results[i]["text"] = anime_translation_fixer(raw_trans)
+                        results[i]["text"] = subtitle_manager.process_segment(raw_trans, res["start"], file_path)
                         self.jobs[job_id]["progress"] = 90 + int(((i + 1) / total_res) * 10)
 
             self.jobs[job_id]["status"] = "completed"

@@ -1,0 +1,232 @@
+[
+  {
+    "component": "AudioAI (Whisper)",
+    "timestamp": 5.33,
+    "input": {
+      "file_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "task": "translate"
+    },
+    "output": "The word, the final battle, comes to mind over and over again.",
+    "metadata": {
+      "probability": -0.5719848719854204
+    }
+  },
+  {
+    "component": "VisualAI (CLIP)",
+    "timestamp": 5.33,
+    "input": {
+      "video_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "window": "\u00b11s"
+    },
+    "output": "shouting, talking, emotional",
+    "metadata": {
+      "max_scores": {
+        "combat": 0.22790553116360604,
+        "emotional": 0.24534214315680997,
+        "peaceful": 0.1943010867223368,
+        "talking": 0.248993848259802,
+        "shouting": 0.27124551952101233
+      }
+    }
+  },
+  {
+    "component": "BrainAI (LLM)",
+    "timestamp": 0,
+    "input": {
+      "original": "The word, the final battle, comes to mind over and over again.",
+      "visuals": "shouting, talking, emotional",
+      "prompt": "Instructions: Rewrite this anime subtitle to be more poetic and dramatic.\nScene: shouting, talking, emotional\nOriginal: The word, the final battle, comes to mind over and over again.\nDramatic Subtitle:"
+    },
+    "output": "The word, the final battle, comes to mind over and over again.",
+    "metadata": {
+      "similarity": 0.9999998807907104
+    }
+  },
+  {
+    "component": "AudioAI (Whisper)",
+    "timestamp": 16.49,
+    "input": {
+      "file_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "task": "translate"
+    },
+    "output": "This long battle may end tonight.",
+    "metadata": {
+      "probability": -0.5719848719854204
+    }
+  },
+  {
+    "component": "VisualAI (CLIP)",
+    "timestamp": 16.49,
+    "input": {
+      "video_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "window": "\u00b11s"
+    },
+    "output": "talking, shouting, combat",
+    "metadata": {
+      "max_scores": {
+        "combat": 0.24654766656949187,
+        "emotional": 0.24541735293167846,
+        "peaceful": 0.18911726757439548,
+        "talking": 0.25559765641796994,
+        "shouting": 0.2469325035249182
+      }
+    }
+  },
+  {
+    "component": "AudioAI (Whisper)",
+    "timestamp": 35.65,
+    "input": {
+      "file_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "task": "translate"
+    },
+    "output": "It's a good night.",
+    "metadata": {
+      "probability": -0.5719848719854204
+    }
+  },
+  {
+    "component": "VisualAI (CLIP)",
+    "timestamp": 35.65,
+    "input": {
+      "video_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "window": "\u00b11s"
+    },
+    "output": "shouting, talking, emotional",
+    "metadata": {
+      "max_scores": {
+        "combat": 0.22512367247391374,
+        "emotional": 0.23286703715233947,
+        "peaceful": 0.1943010867223368,
+        "talking": 0.24230039980605883,
+        "shouting": 0.2460982245417581
+      }
+    }
+  },
+  {
+    "component": "BrainAI (LLM)",
+    "timestamp": 0,
+    "input": {
+      "original": "It's a good night.",
+      "visuals": "shouting, talking, emotional",
+      "prompt": "Instructions: Rewrite this anime subtitle to be more poetic and dramatic.\nScene: shouting, talking, emotional\nOriginal: It's a good night.\nDramatic Subtitle:"
+    },
+    "output": "Its a good night.",
+    "metadata": {
+      "similarity": 0.9842268824577332
+    }
+  },
+  {
+    "component": "AudioAI (Whisper)",
+    "timestamp": 46.87,
+    "input": {
+      "file_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "task": "translate"
+    },
+    "output": "It's been a long time, Zenitsu.",
+    "metadata": {
+      "probability": -0.5719848719854204
+    }
+  },
+  {
+    "component": "VisualAI (CLIP)",
+    "timestamp": 46.87,
+    "input": {
+      "video_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "window": "\u00b11s"
+    },
+    "output": "combat, emotional, shouting",
+    "metadata": {
+      "max_scores": {
+        "combat": 0.2860109549073226,
+        "emotional": 0.2667477474305539,
+        "peaceful": 0.13765281923604314,
+        "talking": 0.230365902378097,
+        "shouting": 0.24994495417692975
+      }
+    }
+  },
+  {
+    "component": "BrainAI (LLM)",
+    "timestamp": 0,
+    "input": {
+      "original": "It's been a long time, Zenitsu.",
+      "visuals": "combat, emotional, shouting",
+      "prompt": "Instructions: Rewrite this anime subtitle to be more poetic and dramatic.\nScene: combat, emotional, shouting\nOriginal: It's been a long time, Zenitsu.\nDramatic Subtitle:"
+    },
+    "output": "Its been a long time, Zenitsu.",
+    "metadata": {
+      "similarity": 0.9956670999526978
+    }
+  },
+  {
+    "component": "AudioAI (Whisper)",
+    "timestamp": 50.87,
+    "input": {
+      "file_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "task": "translate"
+    },
+    "output": "Now, shall we begin?",
+    "metadata": {
+      "probability": -0.5719848719854204
+    }
+  },
+  {
+    "component": "VisualAI (CLIP)",
+    "timestamp": 50.87,
+    "input": {
+      "video_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "window": "\u00b11s"
+    },
+    "output": "shouting, emotional, talking",
+    "metadata": {
+      "max_scores": {
+        "combat": 0.22961075143279056,
+        "emotional": 0.24689877111292827,
+        "peaceful": 0.12274778079303045,
+        "talking": 0.24624174840891624,
+        "shouting": 0.25544362145003663
+      }
+    }
+  },
+  {
+    "component": "AudioAI (Whisper)",
+    "timestamp": 72.41,
+    "input": {
+      "file_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "task": "translate"
+    },
+    "output": "It's time to sing.",
+    "metadata": {
+      "probability": -0.5719848719854204
+    }
+  },
+  {
+    "component": "VisualAI (CLIP)",
+    "timestamp": 72.41,
+    "input": {
+      "video_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+      "window": "\u00b11s"
+    },
+    "output": "shouting",
+    "metadata": {
+      "max_scores": {
+        "combat": 0.21212509832427123,
+        "emotional": 0.21937140223329726,
+        "peaceful": 0.10921765583310317,
+        "talking": 0.21970962878210573,
+        "shouting": 0.24296112797548683
+      }
+    }
+  },
+  {
+    "component": "BrainAI (LLM)",
+    "timestamp": 0,
+    "input": {
+      "hallucination": "It's time to sing."
+    },
+    "output": "Prepare yourself!",
+    "metadata": {
+      "mode": "hard_correction"
+    }
+  }
+]

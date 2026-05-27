@@ -69,6 +69,25 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isDetectingScenes, setIsDetectingScenes] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
 
+  // Restore playback time on mount
+  useEffect(() => {
+    const savedTime = localStorage.getItem(`video-time-${src}`);
+    if (savedTime && videoRef.current) {
+      const time = parseFloat(savedTime);
+      if (!isNaN(time)) {
+        videoRef.current.currentTime = time;
+        setCurrentTime(time);
+      }
+    }
+  }, [videoSrc, src]);
+
+  // Save playback time periodically
+  useEffect(() => {
+    if (currentTime > 0) {
+      localStorage.setItem(`video-time-${src}`, currentTime.toString());
+    }
+  }, [currentTime, src]);
+
   // Handle automatic control visibility
   useEffect(() => {
     if (isPlaying) {

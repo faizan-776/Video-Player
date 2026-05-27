@@ -5,8 +5,14 @@ import { bridge } from "./bridge"
 
 function App() {
   const [videoPath, setVideoPath] = useState<string | null>(localStorage.getItem('video-path'))
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [activeJobs, setActiveJobs] = useState<AIJob[]>([])
+  const [isSidebarOpen, setIsSidebarOpen] = useState(localStorage.getItem('sidebar-open') === 'true')
+  const [activeJobs, setActiveJobs] = useState<AIJob[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('active-jobs') || '[]')
+    } catch {
+      return []
+    }
+  })
   const [seekTime, setSeekTime] = useState<number | null>(null)
   
   useEffect(() => {
@@ -15,10 +21,19 @@ function App() {
     } else {
       localStorage.removeItem('video-path')
     }
+    // CLEAN START: Clear active jobs when switching videos
+    setActiveJobs([]);
   }, [videoPath])
 
   useEffect(() => {
-    // Initial theme and palette application
+    localStorage.setItem('sidebar-open', String(isSidebarOpen))
+  }, [isSidebarOpen])
+
+  useEffect(() => {
+    localStorage.setItem('active-jobs', JSON.stringify(activeJobs))
+  }, [activeJobs])
+
+  useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'light'
     const savedPalette = localStorage.getItem('palette') || ''
     
@@ -37,6 +52,7 @@ function App() {
         setVideoPath(null);
         setIsSidebarOpen(false);
         setActiveJobs([]);
+        localStorage.removeItem('video-path');
       })
       
       window.ipcRenderer.on('set-theme', (_event, theme) => {
@@ -81,23 +97,23 @@ function App() {
           <h1 className="text-5xl font-extrabold mb-4 text-primary tracking-tight">Video Zone</h1>
           <p className="text-muted-foreground mb-10 text-lg">Your minimal, powerful video companion</p>
           
-          <button 
-            onClick={async () => {
-              console.log('[App] Open Video File button clicked');
-              const path = await bridge.openFile()
-              console.log('[App] bridge.openFile path:', path);
-              if (path) {
-                setVideoPath(path)
-              } else {
-                // TEMPORARY: Browser support allows this to be reached without alert
-                // REVERT: Consider restoring the Electron-only alert if strict environment enforcement is desired
-                console.log('[App] No path returned (cancelled or error)');
-              }
-            }}
-            className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold hover:opacity-90 transition-all transform hover:scale-105 active:scale-95 cursor-pointer shadow-xl shadow-primary/20"
-          >
-            Open Video File
-          </button>
+          <div className="flex flex-col gap-4 items-center">
+            <button 
+              onClick={async () => {
+                console.log('[App] Open Video File button clicked');
+                const path = await bridge.openFile()
+                console.log('[App] bridge.openFile path:', path);
+                if (path) {
+                  setVideoPath(path)
+                } else if (!bridge.isElectron) {
+                  alert('Opening local files requires the desktop app. Please use the desktop version or enter a full path above.');
+                }
+              }}
+              className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold hover:opacity-90 transition-all transform hover:scale-105 active:scale-95 cursor-pointer shadow-xl shadow-primary/20 w-full"
+            >
+              Open Video File
+            </button>
+          </div>
         </div>
       ) : (
         <div className="flex w-full h-full relative overflow-hidden bg-black/95">

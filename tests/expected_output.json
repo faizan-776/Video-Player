@@ -1,0 +1,116 @@
+{
+  "input": {
+    "file_path": "D:\\Users\\D_drive\\Projects\\Video-Player-2.0\\tests\\demo.mp4",
+    "file_size": 22201647
+  },
+  "output": {
+    "visual_search": [
+      {
+        "timestamp": 43.30993333333333,
+        "score": 0.2001811921596527
+      },
+      {
+        "timestamp": 45.51213333333333,
+        "score": 0.19933750629425048
+      },
+      {
+        "timestamp": 24.2242,
+        "score": 0.19310572147369384
+      },
+      {
+        "timestamp": 27.160466666666668,
+        "score": 0.18433778882026672
+      },
+      {
+        "timestamp": 52.8528,
+        "score": 0.18045865297317504
+      }
+    ],
+    "scenes": [
+      {
+        "number": 1,
+        "start": 0.0,
+        "end": 0.7674333333333333
+      },
+      {
+        "number": 2,
+        "start": 0.7674333333333333,
+        "end": 4.0040000000000004
+      },
+      {
+        "number": 3,
+        "start": 4.0040000000000004,
+        "end": 5.138466666666667
+      },
+      {
+        "number": 4,
+        "start": 5.138466666666667,
+        "end": 6.740066666666666
+      },
+      {
+        "number": 5,
+        "start": 6.740066666666666,
+        "end": 10.443766666666667
+      },
+      {
+        "number": 6,
+        "start": 10.443766666666667,
+        "end": 13.413400000000001
+      },
+      {
+        "number": 7,
+        "start": 13.413400000000001,
+        "end": 15.749066666666668
+      },
+      {
+        "number": 8,
+        "start": 15.749066666666668,
+        "end": 16.483133333333335
+      },
+      {
+        "number": 9,
+        "start": 16.483133333333335,
+        "end": 17.517500000000002
+      },
+      {
+        "number": 10,
+        "start": 17.517500000000002,
+        "end": 20.9209
+      }
+    ],
+    "global_context": "dramatic",
+    "transcription_sample": [
+      {
+        "start": 5.33,
+        "end": 10.33,
+        "text": "The final moment comes to mind over and over again."
+      },
+      {
+        "start": 16.49,
+        "end": 20.49,
+        "text": "This long battle may end tonight."
+      },
+      {
+        "start": 35.65,
+        "end": 38.15,
+        "text": "It's a good night."
+      },
+      {
+        "start": 46.87,
+        "end": 50.37,
+        "text": "It's been a long time, Zenitsu."
+      },
+      {
+        "start": 50.87,
+        "end": 71.91,
+        "text": "Is it serious or serious?"
+      },
+      {
+        "start": 72.41,
+        "end": 75.67,
+        "text": "It's time to sing."
+      }
+    ],
+    "dramatic_markers_count": 0
+  }
+}

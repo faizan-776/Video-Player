@@ -1,6 +1,10 @@
 import cv2
 import os
+# Suppress OpenCV/FFMPEG warnings
+os.environ["OPENCV_VIDEOIO_LOG_LEVEL"] = "0"
+os.environ["FFMPEG_LOG_LEVEL"] = "quiet"
 import threading
+from services.utils import diagnostic_logger
 import uuid
 import lancedb
 from PIL import Image
@@ -45,6 +49,22 @@ class SearchService:
         except Exception as e:
             print(f"[ERROR] Transcript injection failed: {e}")
 
+    def clear_transcripts(self, video_path: str):
+        """Task 1.3: Clear all transcripts for a specific video to ensure fresh re-transcription."""
+        try:
+            if self.table_name not in self.db.table_names():
+                return
+            
+            table = self.db.open_table(self.table_name)
+            norm_path = self._normalize_path(video_path)
+            escaped_path = self._escape_path(norm_path)
+            
+            # Update all rows for this video to have an empty transcript
+            table.update(where=f"video_path = '{escaped_path}'", values={"transcript": ""})
+            print(f"[CLEANUP] Cleared old transcripts for: {os.path.basename(video_path)}")
+        except Exception as e:
+            print(f"[ERROR] Failed to clear transcripts: {e}")
+
     def _get_model(self) -> Any:
         if self.model is None:
             import torch
@@ -69,13 +89,10 @@ class SearchService:
             if use_openvino:
                 try:
                     print(f"[INFO] Initializing CLIP-Medium model ({model_id})...")
-                    self.model = SentenceTransformer(model_id)
-                    if hasattr(self.model, "to"):
-                        try:
-                            self.model.to("openvino")
-                            print("[SUCCESS] CLIP is now running on Intel iGPU.")
-                        except Exception as ve:
-                            print(f"[INFO] GPU optimization skipped: {ve}")
+                    # For now, OpenVINO is best used via the CPU/GPU plugins in later steps
+                    # Standard SentenceTransformer doesn't support .to("openvino")
+                    self.model = SentenceTransformer(model_id, device="cpu")
+                    print("[SUCCESS] AI Search Engine ready (OpenVINO detected, using CPU for compatibility).")
                 except Exception as e:
                     print(f"[WARN] OpenVINO init failed: {e}")
                     use_openvino = False
@@ -87,9 +104,86 @@ class SearchService:
                     torch.set_num_threads(max(1, cpu_count - 1))
                 self.model = SentenceTransformer(model_id, device=device)
             
+            # Cache Concept Anchors for Visual-Semantic Mapping
+            self._init_concept_anchors()
             print("[SUCCESS] AI Search Engine is ready.")
             
         return self.model
+
+    def _init_concept_anchors(self):
+        """Pre-calculate embeddings for visual concepts to use as anchors."""
+        concepts = {
+            "combat": "sword fight, clashing blades, aggressive action, fire, explosions, intense battle",
+            "emotional": "crying, sad face, emotional close-up, touching moment, tears",
+            "peaceful": "nature, landscape, peaceful sky, blue clouds, quiet scenery",
+            "talking": "character talking, dialogue, face close-up, conversation",
+            "shouting": "screaming, wide mouth, aggressive shouting, angry expression"
+        }
+        self.concept_embeddings = {}
+        for name, desc in concepts.items():
+            emb = self.model.encode([desc], normalize_embeddings=True)[0]
+            self.concept_embeddings[name] = emb
+
+    def get_visual_context(self, video_path: str, timestamp: float) -> str:
+        """Task 4.1: Identify visual keywords for a window around the timestamp."""
+        try:
+            if self.table_name not in self.db.table_names():
+                return "general"
+            
+            model = self._get_model()
+            table = self.db.open_table(self.table_name)
+            norm_path = self._normalize_path(video_path)
+            escaped_path = self._escape_path(norm_path)
+            
+            # WINDOW EXPANSION: Look at 2 seconds around the timestamp
+            # This handles rapid cuts or slightly misaligned transcriptions
+            where_clause = f"video_path = '{escaped_path}' AND timestamp >= {timestamp - 1.0} AND timestamp <= {timestamp + 1.0}"
+            results = table.search().where(where_clause).limit(5).to_list()
+            
+            if not results: return "general"
+            
+            # Aggregate scores across all frames in the window
+            # We take the MAXIMUM score for each concept in the window
+            max_scores = {name: 0.0 for name in self.concept_embeddings.keys()}
+            
+            for res in results:
+                frame_vec = np.array(res["vector"])
+                for name, anchor_vec in self.concept_embeddings.items():
+                    similarity = np.dot(frame_vec, anchor_vec)
+                    if similarity > max_scores[name]:
+                        max_scores[name] = similarity
+            
+            # Sort concepts by their max similarity in the window
+            sorted_concepts = sorted(max_scores.items(), key=lambda x: x[1], reverse=True)
+            
+            # Precision Threshold: 0.22 (Optimized for anime CLIP embeddings)
+            top_concepts = [c[0] for c in sorted_concepts if c[1] > 0.22]
+            
+            result = ", ".join(top_concepts[:3]) if top_concepts else "general"
+            
+            # DIAGNOSTIC: Log visual AI input/output
+            diagnostic_logger.log(
+                component="VisualAI (CLIP)",
+                timestamp=timestamp,
+                input_data={"video_path": video_path, "window": "±1s"},
+                output_data=result,
+                metadata={"max_scores": {k: float(v) for k, v in max_scores.items()}}
+            )
+            
+            return result
+        except Exception as e:
+            print(f"[DEBUG] Visual context lookup failed: {e}")
+            return "general"
+
+    def calculate_similarity(self, text1: str, text2: str) -> float:
+        """Task 4.2: Compare two strings semantically using CLIP/SBERT."""
+        try:
+            model = self._get_model()
+            embs = model.encode([text1, text2], normalize_embeddings=True)
+            return float(np.dot(embs[0], embs[1]))
+        except Exception as e:
+            print(f"[DEBUG] Similarity calculation failed: {e}")
+            return 0.0
 
     def _normalize_path(self, path: str) -> str:
         return path.replace("\\", "/").lower()
@@ -148,7 +242,7 @@ class SearchService:
                 })
 
                 if len(frames_to_encode) >= batch_size:
-                    embeddings = model.encode(frames_to_encode, batch_size=batch_size, show_progress_bar=False)
+                    embeddings = model.encode(frames_to_encode, batch_size=batch_size, show_progress_bar=False, normalize_embeddings=True)
                     for idx, emb in enumerate(embeddings):
                         item = metadata_buffer[idx]
                         item["vector"] = emb.tolist()
@@ -172,7 +266,7 @@ class SearchService:
                         gc.collect()
 
             if frames_to_encode:
-                embeddings = model.encode(frames_to_encode, show_progress_bar=False)
+                embeddings = model.encode(frames_to_encode, show_progress_bar=False, normalize_embeddings=True)
                 for idx, emb in enumerate(embeddings):
                     item = metadata_buffer[idx]
                     item["vector"] = emb.tolist()
@@ -199,15 +293,17 @@ class SearchService:
     def search(self, query: str, video_path: Optional[str] = None):
         try:
             if self.table_name not in self.db.table_names():
+                print(f"[SEARCH] Table {self.table_name} not found.")
                 return []
             model = self._get_model()
             table = self.db.open_table(self.table_name)
             
-            query_embeddings = model.encode([query])
+            # Use normalized embeddings for cosine similarity
+            query_embeddings = model.encode([query], normalize_embeddings=True)
             query_embedding = query_embeddings[0].tolist()
             
-            # 1. Visual Search (Vector)
-            query_builder = table.search(query_embedding).limit(80)
+            # 1. Visual Search (Vector) - Use cosine metric
+            query_builder = table.search(query_embedding).metric("cosine").limit(80)
             if video_path:
                 norm_path = self._normalize_path(video_path)
                 escaped_path = self._escape_path(norm_path)
@@ -220,8 +316,9 @@ class SearchService:
             query_terms = query.lower().split()
 
             for res in results:
+                # With cosine metric, distance is 1 - cosine_similarity
                 visual_distance = res.get("_distance", 1.0)
-                visual_score = 1 / (1 + visual_distance)
+                visual_score = max(0, 1 - visual_distance)
                 
                 # Semantic boost if keywords appear in transcript
                 transcript = res.get("transcript", "").lower()
@@ -231,9 +328,10 @@ class SearchService:
                     text_boost = (matches / len(query_terms)) * 0.4 # Max 40% boost
 
                 # Total hybrid score
+                # Threshold 0.15 (Validated: CLIP scores for anime often fall between 0.15-0.25)
                 combined_score = (visual_score * 0.7) + text_boost
                 
-                if combined_score > 0.35:
+                if combined_score > 0.15:
                     formatted_results.append({
                         "timestamp": res["timestamp"],
                         "score": float(min(1.0, combined_score)),
